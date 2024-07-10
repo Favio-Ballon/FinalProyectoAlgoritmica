@@ -9,16 +9,17 @@ from keras._tf_keras.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
 import numpy as np
 from PIL import Image, ImageTk
 
+
 def capture_images(user_name):
     os.makedirs(f'fotos/{user_name}', exist_ok=True)
     cap = cv2.VideoCapture(0)
     count = 0
-    
+
     while count < 30:
         ret, frame = cap.read()
         if not ret:
             break
-        
+
         cv2.imshow('Capturing', frame)
         cv2.imwrite(f'fotos/{user_name}/{count}.jpg', frame)
         count += 1
@@ -34,12 +35,10 @@ def register_user():
     name = simpledialog.askstring("Registro", "Ingrese su nombre:")
     if name:
         confirm_capture = messagebox.askyesno("Registro", "¿Desea abrir la cámara para capturar imágenes?")
-
-    if confirm_capture:
-        if name:
-            capture_images(name)
-    else:
-        messagebox.showinfo("Registro", "Puede registrar imágenes más tarde desde la pantalla principal.")
+        if confirm_capture:
+                capture_images(name)
+        else:
+            messagebox.showinfo("Registro", "Puede registrar imágenes más tarde desde la pantalla principal.")
 
 
 # Configuración del generador de datos
