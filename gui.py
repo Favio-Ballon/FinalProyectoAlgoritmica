@@ -33,7 +33,14 @@ def capture_images(user_name):
 def register_user():
     name = simpledialog.askstring("Registro", "Ingrese su nombre:")
     if name:
-        capture_images(name)
+        confirm_capture = messagebox.askyesno("Registro", "¿Desea abrir la cámara para capturar imágenes?")
+
+    if confirm_capture:
+        if name:
+            capture_images(name)
+    else:
+        messagebox.showinfo("Registro", "Puede registrar imágenes más tarde desde la pantalla principal.")
+
 
 # Configuración del generador de datos
 datagen = ImageDataGenerator(rescale=1.0/255, validation_split=0.2)
