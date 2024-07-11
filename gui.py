@@ -9,7 +9,7 @@ from keras._tf_keras.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
 import numpy as np
 from PIL import Image, ImageTk
 
-
+# Función para capturar imágenes y guardarlas en carpetas
 def capture_images(user_name):
     os.makedirs(f'fotos/{user_name}', exist_ok=True)
     cap = cv2.VideoCapture(0)
@@ -36,10 +36,9 @@ def register_user():
     if name:
         confirm_capture = messagebox.askyesno("Registro", "¿Desea abrir la cámara para capturar imágenes?")
         if confirm_capture:
-                capture_images(name)
+            capture_images(name)
         else:
             messagebox.showinfo("Registro", "Puede registrar imágenes más tarde desde la pantalla principal.")
-
 
 # Configuración del generador de datos
 datagen = ImageDataGenerator(rescale=1.0/255, validation_split=0.2)
@@ -79,39 +78,59 @@ model.fit(train_gen, epochs=10, validation_data=val_gen)
 # Guardar el modelo
 model.save('face_recognition_model.h5')
 
-# Función para capturar y predecir la imagen
+# Función para iniciar la sesión y mantener la cámara encendida para identificar al usuario en tiempo real
 def capture_and_predict():
     cap = cv2.VideoCapture(0)
-    ret, frame = cap.read()
-    cap.release()
-    if not ret:
+    
+    if not cap.isOpened():
         messagebox.showerror("Error", "No se pudo acceder a la cámara.")
         return
 
-    img = cv2.resize(frame, (100, 100))
-    img = np.expand_dims(img, axis=0) / 255.0
-    prediction = model.predict(img)
-    predicted_class_index = np.argmax(prediction)
-    confidence = prediction[0][predicted_class_index]
+    def update_frame():
+        ret, frame = cap.read()
+        if ret:
+            img = cv2.resize(frame, (100, 100))
+            img = np.expand_dims(img, axis=0) / 255.0
+            prediction = model.predict(img)
+            predicted_class_index = np.argmax(prediction)
+            confidence = prediction[0][predicted_class_index]
 
-    confidence_threshold = 0.75  # Umbral de confianza del 75%
+            confidence_threshold = 0.75  # Umbral de confianza del 75%
 
-    if confidence < confidence_threshold:
-        messagebox.showerror("Error", "Usuario no registrado o confianza insuficiente.")
-    else:
-        predicted_class = class_names[predicted_class_index]
-        show_greeting_screen(predicted_class)
+            if confidence >= confidence_threshold:
+                predicted_class = class_names[predicted_class_index]
+                name_label.config(text=f"Hola, {predicted_class}!")
+            else:
+                name_label.config(text="Usuario no registrado")
 
-# Función para mostrar la pantalla de saludo
-def show_greeting_screen(user_name):
+        # Actualizar la imagen en el widget de Tkinter
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        img_tk = ImageTk.PhotoImage(image=Image.fromarray(frame))
+        video_label.imgtk = img_tk
+        video_label.configure(image=img_tk)
+
+        # Llamar a la función de actualización nuevamente después de 10 ms
+        video_label.after(10, update_frame)
+
+    # Configuración de la interfaz para mostrar el video en vivo
     for widget in root.winfo_children():
         widget.destroy()
 
-    greeting_label = tk.Label(root, text=f"Hola, {user_name}!", font=("Arial", 24), bg="lightblue", fg="darkblue")
-    greeting_label.pack(pady=20)
+    name_label = tk.Label(root, text="Detectando...", font=("Arial", 24), bg="lightblue", fg="darkblue")
+    name_label.pack(pady=20)
 
-    back_button = tk.Button(root, text="Volver", command=show_main_screen, font=("Arial", 14), bg="darkblue", fg="white", width=15)
+    video_label = tk.Label(root)
+    video_label.pack()
+
+    back_button = tk.Button(root, text="Volver", command=lambda: stop_camera(cap), font=("Arial", 14), bg="darkblue", fg="white", width=15)
     back_button.pack(pady=10)
+
+    update_frame()
+
+# Función para detener la cámara y volver a la pantalla principal
+def stop_camera(cap):
+    cap.release()
+    show_main_screen()
 
 # Función para mostrar la pantalla principal
 def show_main_screen():
