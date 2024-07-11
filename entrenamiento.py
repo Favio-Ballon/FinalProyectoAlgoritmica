@@ -2,7 +2,7 @@ import os
 os.environ['PYTHONIOENCODING'] = 'utf-8'
 
 import tensorflow as tf
-from tensorflow import keras
+
 from keras._tf_keras.keras.preprocessing.image import ImageDataGenerator
 from keras import Sequential
 from keras._tf_keras.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
